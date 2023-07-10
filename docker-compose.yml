@@ -1,0 +1,60 @@
+version: '3.9'
+
+networks:
+  dev_network:
+
+services:
+
+  db:
+    image: postgres:14.3-alpine3.15
+    ports:
+      - "5431:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_BASE}
+
+    networks:
+      dev_network:
+        aliases:
+          - postgre
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      PG_USER: ${DB_USER}
+      PG_PASSWORD: ${DB_PASSWORD}
+      PG_HOST: ${DB_HOST}
+      PG_PORT: ${DB_PORT}
+      PG_DB: ${DB_BASE}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    volumes:
+     - ./app:/app/volumes
+    networks:
+      dev_network:
+        aliases:
+          - api
+    restart: on-failure
+
+
+  pgadmin:
+      image: dpage/pgadmin4:latest
+      environment:
+          PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+          PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+          PGADMIN_LISTEN_PORT: ${PGADMIN_PORT}
+      ports:
+          - "5430:80"
+      links:
+        - "db:pgsql-server"
+      depends_on:
+          - db
+      networks:
+        dev_network:
+          aliases:
+            - pdadmi
